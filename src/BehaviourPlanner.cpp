@@ -7,6 +7,7 @@
 
 #include "BehaviourPlanner.h"
 #include "World.h"
+#include <limits>
 
 BehaviourPlanner::BehaviourPlanner(World &w, Car &c){
   this->world = &w;
@@ -145,7 +146,7 @@ LaneInfo BehaviourPlanner::best_lane(){
     }
   }
   
-  double min_cost = MAXFLOAT;
+  double min_cost = std::numeric_limits<float>::max();
   int lane_idx = -1;
   for(int i =0; i < costs.size(); i++ ){
     if (costs[i]<min_cost){

@@ -7,7 +7,7 @@
 
 #include "tools.h"
 #include "World.h"
-
+#include <limits>
 
 using namespace std;
 
@@ -120,7 +120,7 @@ VehicleList World::vehicle_in_gap(int lane, int min_s, int max_s, VehicleList ve
 
 
 Vehicle World::get_closest(double s, VehicleList vehicle_list ){
-  double min_distance = MAXFLOAT;
+  double min_distance = std::numeric_limits<float>::max();
   int car_id = -1;
   for(auto vehicle:vehicle_list){
     auto id = vehicle.first;
@@ -165,7 +165,7 @@ Vehicle World::get_farthest(double s, VehicleList vehicle_list ){
 
 
 Vehicle World::get_slowest( VehicleList vehicle_list ){
-  double min_speed = MAXFLOAT;
+  double min_speed = std::numeric_limits<float>::max();
   int car_id = -1;
   for(auto vehicle:vehicle_list){
     auto id = vehicle.first;
