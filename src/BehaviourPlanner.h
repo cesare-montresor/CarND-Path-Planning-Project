@@ -39,7 +39,7 @@ class BehaviourPlanner{
   
 public:
   const double CHANGE_LANE_DISTANCE = 50;
-  const double SAFE_GAP_BEFORE = 10;
+  const double SAFE_GAP_BEFORE = 20;
   const double SAFE_GAP_AFTER = 20;
   
   const double EVALUATION_TIME = 2;

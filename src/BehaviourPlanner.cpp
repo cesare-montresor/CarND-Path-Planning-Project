@@ -36,7 +36,7 @@ bool BehaviourPlanner::can_move_right(){
 }
 
 bool BehaviourPlanner::can_move_to_lane(int lane){
-  if (lane < 0 || lane > world->lane_cnt ){
+  if (lane < 0 || lane >= world->lane_cnt ){
     return false;
   }
   float min_s = car->s - SAFE_GAP_BEFORE;
@@ -68,7 +68,8 @@ int BehaviourPlanner::evaluate_manuver(){
       }
     }
   }
-  cout<<"target_lane:"<<target_lane<<endl;
+  cout<<"target_lane: "<<target_lane<<endl;
+  cout<<"\n--------------------------\n";
   return target_lane;
 }
 
@@ -96,15 +97,15 @@ LaneInfo BehaviourPlanner::best_lane(){
     double lane_speed = 0;
     double free_space = 0;
     double distance_cost = 0;
-    double distance_cost_new = 0;
+    double distance_cost_safe = 0;
     if ( in_lane_cnt > 0 ){
       Vehicle closest = world->get_closest(car->s, in_lane);
       lane_speed = min(closest.vs,car->MAX_SPEED);
       free_space = closest.s - car->s;
       
       distance_cost = (1-(free_space/max_distance)) * COST_DISTANCE;
-      distance_cost_new = exp((1-(free_space/50))) * 20;
-      cost += distance_cost + distance_cost_new;
+      distance_cost_safe = exp((1-(free_space/50))) * 20;
+      cost += distance_cost + distance_cost_safe;
     }else{
       free_space = max_distance * 2;
       lane_speed = car->MAX_SPEED;
@@ -114,7 +115,7 @@ LaneInfo BehaviourPlanner::best_lane(){
       cost += COST_SHIFT;
     }
     cost += (1-(lane_speed/car->MAX_SPEED))*COST_SPEED;
-    cout<<(int)lane<<"\t"<<in_lane_cnt<<"\t"<<(int)free_space<<"\t"<<(int)distance_cost<<"\t"<<(int)distance_cost_new<<endl;
+    //cout<<(int)lane<<"\t"<<in_lane_cnt<<"\t"<<(int)free_space<<"\t"<<(int)distance_cost<<"\t"<<(int)distance_cost_safe<<endl;
     
     lane_info.lane = lane;
     lane_info.cost = cost;
@@ -124,16 +125,16 @@ LaneInfo BehaviourPlanner::best_lane(){
     
     evaluations[lane].push_back(lane_info);
     latest_lane_info[lane] = lane_info;
-    //auto l = lane_info;
-    //cout<<(int)l.lane<<"\t"<<(int)l.cost<<"\t"<<(int)l.lane_speed<<"\t"<<(int)l.free_space<<"\t"<<"\n";
+    auto l = lane_info;
+    cout<<(int)l.lane<<"\t"<<(int)l.cost<<"\t"<<(int)l.lane_speed<<"\t"<<(int)l.free_space<<"\t"<<"\n";
   }
   
   DoubleV costs = {0,0,0};
-  cout<<"Evaluations queue size:\t";
+  //cout<<"Evaluations queue size:\t";
   for(auto &ev:evaluations){
     auto lane = ev.first;
     auto lane_info_list = &ev.second;
-    cout<<lane_info_list->size()<<"\t";
+    //cout<<lane_info_list->size()<<"\t";
     for (auto lane_info=lane_info_list->begin(); lane_info!=lane_info_list->end(); ){
       if ( lane_info->timestamp + EVALUATION_TIME >= now ){
         costs[lane] += lane_info->cost;
@@ -143,8 +144,6 @@ LaneInfo BehaviourPlanner::best_lane(){
       }
     }
   }
-  cout<<endl;
-  cout<<"\n--------------------------\n";
   
   double min_cost = MAXFLOAT;
   int lane_idx = -1;

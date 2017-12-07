@@ -132,6 +132,9 @@ int main() {
           // Sensor Fusion Data, a list of all other cars on the same side of the road.
           auto sensor_fusion = data["sensor_fusion"];
           int prev_size = previous_path_x.size();
+          if (prev_size >2){ // recompute the whole trajectory to better react to changes in speed
+            prev_size = 2;
+          }
           
           car.update(data["x"], data["y"], data["s"], data["d"], data["yaw"], data["speed"]);
           world.update_predictions(sensor_fusion);
@@ -164,10 +167,10 @@ int main() {
               if ( distance < safety_distance ){
                 accel = max_accel; //* (1-(distance/safety_distance));
                 limit_speed = true;
-                //prev_size = 2;
               }
             }
           }
+          
           
           
           if (limit_speed && ref_vel_ms - accel > 0){
