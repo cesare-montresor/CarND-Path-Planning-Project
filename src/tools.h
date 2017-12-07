@@ -25,7 +25,7 @@ using namespace Eigen;
 #define DoubleV3 vector<DoubleV2>
 
 
-constexpr double pi();
+double pi();
 double deg2rad(double x);
 double rad2deg(double x);
 double mph2ms(double speed);

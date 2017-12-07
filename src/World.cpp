@@ -74,11 +74,7 @@ void World::update_predictions(DoubleV2 sensor_fusion){
     for(int t=0;t<=horizon; t++){
       v.prediction.push_back({s+v.s*t,d+v.d*t});
     }
-    int dist = (int)(s-car->s);
-    /*if (dist > 0){
-      cout<<"Car:\t"<<id<<"\t"<<dist<<"\t"<<(int)ms2mph(v.vs)<<"\t"<<"\t"<<v.vd<<endl;
-     }
-     */
+    //cout<<"Car:\t"<<id<<"\t"<<dist<<"\t"<<(int)ms2mph(v.vs)<<"\t"<<"\t"<<v.vd<<endl;
     vehicles[id] = v;
   }
   
@@ -107,9 +103,21 @@ VehicleList World::filter_predictions(bool in_front, double s, int lane, Vehicle
       }
     }
   }
-  
   return filtered;
 }
+
+VehicleList World::vehicle_in_gap(int lane, int min_s, int max_s, VehicleList vehicle_list){
+  VehicleList filtered = {};
+  for(auto vehicle:vehicle_list){
+    auto id = vehicle.first;
+    auto v = vehicle.second;
+    if (v.lane == lane && v.s > min_s && v.s<max_s){ // filter by d coords
+      filtered[id] = v;
+    }
+  }
+  return filtered;
+}
+
 
 Vehicle World::get_closest(double s, VehicleList vehicle_list ){
   double min_distance = MAXFLOAT;
@@ -197,7 +205,6 @@ Vehicle World::get_fastest(VehicleList vehicle_list ){
   v.id = -1;
   return v;
 }
-
 
 
 

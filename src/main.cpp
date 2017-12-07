@@ -80,19 +80,18 @@ int main() {
   Car car;
   BehaviourPlanner bp(world, car);
   world.car = &car;
+  car.world = &world;
   double ref_vel_ms = 0;
   double target_speed = 0;
-  double last_change = now_ms();
   
   h.onMessage([&bp,&world,&car,&ref_vel_ms, &target_speed](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     double max_vel_mph = 49.5; // miles/hour
     double max_vel_ms = max_vel_mph / 2.24; // meters/sec
-    double ancor_spacing = 30;
+    double ancor_spacing = 50;
     double ancor_cnt = 3;
-    double lane = 1;
     int path_size = 50;
-    double path_length = 30; //meters
+    double path_length = 100; //meters
     double sim_upd_freq = 0.02;
     double max_accel = 0.1;
     double accel = max_accel;
@@ -128,7 +127,7 @@ int main() {
           auto previous_path_y = data["previous_path_y"];
           // Previous path's end s and d values
           double end_path_s = data["end_path_s"];
-          double end_path_d = data["end_path_d"];
+          //double end_path_d = data["end_path_d"];
 
           // Sensor Fusion Data, a list of all other cars on the same side of the road.
           auto sensor_fusion = data["sensor_fusion"];
@@ -136,15 +135,8 @@ int main() {
           
           car.update(data["x"], data["y"], data["s"], data["d"], data["yaw"], data["speed"]);
           world.update_predictions(sensor_fusion);
-          auto lane_info = bp.best_lane();
-          lane = lane_info[0][0];
           
-          /*
-          auto trajectory = bp.get_trajectory({previous_path_x,previous_path_y});
-          vector<double> next_x_vals = trajectory[0];
-          vector<double> next_y_vals = trajectory[1];
-           */
-          
+          int lane = bp.evaluate_manuver();
           
           /*Collision*/
           bool limit_speed = false;
@@ -155,26 +147,28 @@ int main() {
             lim_s = end_path_s;
           }
           
-          for (int i = 0; i< sensor_fusion.size(); i++){
-            float check_d = sensor_fusion[i][6];
-            if (check_d > lane*4 && check_d < (lane+1)*4 ){
-              double check_vx = sensor_fusion[i][3];
-              double check_vy = sensor_fusion[i][4];
-              double check_speed = sqrt(check_vx*check_vx+check_vy*check_vy);
-              double check_s = sensor_fusion[i][5];
-              check_s += prev_size*sim_upd_freq*check_speed;
-              double distance = check_s - lim_s;
-              if ( distance > 0 ){
-                cout<<"distance:"<<distance<<endl;
-                if ( distance < safety_distance ){
-                  accel = max_accel * (1-(distance/safety_distance));
-                  limit_speed = true;
-                  prev_size = 2;
-                }
+          auto in_front = world.filter_predictions(true, car.s, car.lane, world.vehicles);
+          if (car.lane != lane){ // consider also the target lane in case of lane change
+            auto in_front_target = world.filter_predictions(true, car.s, lane, world.vehicles);
+            in_front.insert(in_front_target.begin(), in_front_target.end());
+          }
+          
+          if (in_front.size() > 0 ){
+            auto closest = world.get_closest(car.s, in_front);
+            double check_speed = closest.vs;
+            double check_s = closest.s;
+            check_s += prev_size*sim_upd_freq*check_speed;
+            double distance = check_s - lim_s;
+            if ( distance > 0 ){
+              //cout<<"distance:"<<distance<<endl;
+              if ( distance < safety_distance ){
+                accel = max_accel; //* (1-(distance/safety_distance));
+                limit_speed = true;
+                //prev_size = 2;
               }
-              
             }
           }
+          
           
           if (limit_speed && ref_vel_ms - accel > 0){
             ref_vel_ms -= accel; // ms
@@ -186,8 +180,6 @@ int main() {
           }
           
           /*Trajectory*/
-        
-          
           double ref_yaw = deg2rad(yaw_deg);
           double ref_x = x;
           double ref_y = y;

@@ -62,9 +62,10 @@ public:
   
   void update_predictions(DoubleV2 sensor_fusion);
   VehicleList filter_predictions(bool in_front, double s, int lane, VehicleList vehicle_list);
+  VehicleList vehicle_in_gap(int lane, int min_s, int max_s, VehicleList vehicle_list);
+  
   Vehicle get_closest(double s, VehicleList vehicle_list );
   Vehicle get_farthest(double s, VehicleList vehicle_list );
-  
   Vehicle get_slowest( VehicleList vehicle_list );
   Vehicle get_fastest( VehicleList vehicle_list );
   

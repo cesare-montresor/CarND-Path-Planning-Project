@@ -6,15 +6,9 @@
 //
 
 #include "Car.h"
+#include "World.h"
 
 Car::Car(){
-  
-}
-
-void Car::adjust_speed(double speed){
-  if (speed < 0){speed = 0; }
-  double max_speed = min(speed,MAX_SPEED);
-  
   
 }
 
@@ -32,6 +26,7 @@ void Car::update(double x,double y,double s,double d,double yaw,double speed){
     
     this->acc_s = 0;
     this->acc_d = 0;
+    this->lane = world->laneFromCoords(this->d);
     return;
   }
   
@@ -75,6 +70,8 @@ void Car::update(double x,double y,double s,double d,double yaw,double speed){
   
   this->acc_s = acc_s;
   this->acc_d = acc_d;
+  
+  this->lane = world->laneFromCoords(this->d);
 }
 
 

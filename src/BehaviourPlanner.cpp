@@ -12,36 +12,99 @@ BehaviourPlanner::BehaviourPlanner(World &w, Car &c){
   this->world = &w;
   this->car = &c;
   
-  for(double i=0; i<world->lane_cnt;i++){
-    evaluations[i] = {i,0}; // lane, cost
+  for(int i=0; i<world->lane_cnt;i++){
+    evaluations[i] = {}; // lane, cost
   }
 }
 
-DoubleV2 BehaviourPlanner::best_lane(){
-  DoubleV2 lane_info={};
+bool BehaviourPlanner::should_change_lane(){
+  VehicleList vehicles_head = world->filter_predictions(true, car->s, car->lane, world->vehicles);
+  if (vehicles_head.size() == 0){
+    return false;
+  }
+  Vehicle closest = world->get_closest(car->s, vehicles_head);
+  double distance = abs(car->s - closest.s);
+  return distance < CHANGE_LANE_DISTANCE;
+}
+
+bool BehaviourPlanner::can_move_left(){
+  return can_move_to_lane(car->lane-1);
+}
+
+bool BehaviourPlanner::can_move_right(){
+  return can_move_to_lane(car->lane+1);
+}
+
+bool BehaviourPlanner::can_move_to_lane(int lane){
+  if (lane < 0 || lane > world->lane_cnt ){
+    return false;
+  }
+  float min_s = car->s - SAFE_GAP_BEFORE;
+  float max_s = car->s + SAFE_GAP_AFTER;
+  VehicleList vehicles_in_gap = world->vehicle_in_gap(lane, min_s, max_s, world->vehicles);
+  return vehicles_in_gap.size() == 0;
+}
+
+int BehaviourPlanner::evaluate_manuver(){
+  auto lane_info = best_lane();
+  auto now = now_ms();
+  if (cooldown_timer == -1){
+    cooldown_timer = now + COOLDOWN_TIME;
+  }
   
-  VehicleList in_front = world->filter_predictions(true, car->s, -1, world->vehicles);
-  Vehicle futherst = world->get_farthest(car->s, in_front);
+  if (target_lane == -1){
+    target_lane = car->lane;
+  }
   
-  double max_distance = futherst.s - car->s;
-  auto in_front_cnt = in_front.size();
-  int current_lane = world->laneFromCoords(car->d);
-  
-  for(int lane=0; lane<world->lane_cnt; lane++ ){
+  if (now > cooldown_timer){
     
+    if (should_change_lane()){
+      if ( lane_info.lane < car->lane && can_move_left() ){
+        target_lane -= 1;
+        cooldown_timer = now + COOLDOWN_TIME;
+      }else if ( lane_info.lane > car->lane && can_move_right() ){
+        target_lane += 1;
+        cooldown_timer = now + COOLDOWN_TIME;
+      }
+    }
+  }
+  cout<<"target_lane:"<<target_lane<<endl;
+  return target_lane;
+}
+
+LaneInfo BehaviourPlanner::best_lane(){
+  double now = now_ms();
+  map<int, LaneInfo> latest_lane_info;
+  VehicleList in_front = world->filter_predictions(true, car->s, -1, world->vehicles);
+  double max_distance = 250;
+  /*
+  auto in_front_cnt = in_front.size();
+  if (in_front_cnt > 0){
+    Vehicle futherst = world->get_farthest(car->s, in_front);
+    max_distance = futherst.s - car->s;
+  }
+  */
+  //cout<<"In front:"<<in_front_cnt<<endl;
+  
+  int current_lane = car->lane;
+  for(int lane=0; lane<world->lane_cnt; lane++ ){
+    LaneInfo lane_info;
     VehicleList in_lane = world->filter_predictions(true, car->s, lane, in_front);
     auto in_lane_cnt = in_lane.size();
     
     double cost = 0;
     double lane_speed = 0;
     double free_space = 0;
+    double distance_cost = 0;
+    double distance_cost_new = 0;
     if ( in_lane_cnt > 0 ){
       Vehicle closest = world->get_closest(car->s, in_lane);
-      lane_speed = closest.vs;
+      lane_speed = min(closest.vs,car->MAX_SPEED);
       free_space = closest.s - car->s;
       
-      cost += (in_lane_cnt / (double)in_front_cnt) * COST_COUNT;
-      cost += (1-(free_space/max_distance)) * COST_DISTANCE;
+      distance_cost = (1-(free_space/max_distance)) * COST_DISTANCE;
+      distance_cost_new = exp((1-(free_space/50))) * 20;
+      cost += distance_cost + distance_cost_new;
     }else{
       free_space = max_distance * 2;
       lane_speed = car->MAX_SPEED;
@@ -51,115 +114,48 @@ DoubleV2 BehaviourPlanner::best_lane(){
       cost += COST_SHIFT;
     }
     cost += (1-(lane_speed/car->MAX_SPEED))*COST_SPEED;
+    cout<<(int)lane<<"\t"<<in_lane_cnt<<"\t"<<(int)free_space<<"\t"<<(int)distance_cost<<"\t"<<(int)distance_cost_new<<endl;
     
-    lane_info.push_back({(double)lane, cost, lane_speed, free_space});
+    lane_info.lane = lane;
+    lane_info.cost = cost;
+    lane_info.lane_speed = lane_speed;
+    lane_info.free_space = free_space;
+    lane_info.timestamp = now;
+    
+    evaluations[lane].push_back(lane_info);
+    latest_lane_info[lane] = lane_info;
+    //auto l = lane_info;
+    //cout<<(int)l.lane<<"\t"<<(int)l.cost<<"\t"<<(int)l.lane_speed<<"\t"<<(int)l.free_space<<"\t"<<"\n";
   }
   
-  sort(lane_info.begin(), lane_info.end(), [](const DoubleV &a, const DoubleV &b) -> bool
-  {
-    return a[1] < b[1];
-  });
-  cout<<endl<<endl;
-  for (auto li: lane_info){
-    cout<<li[0]<<"\t"<<li[1]<<"\t"<<li[2]<<"\t"<<li[3]<<endl;
-  }
-  cout<<"----------------------------------"<<endl;
-  return lane_info;
-}
-
-DoubleV2 BehaviourPlanner::evaluate_manuver(){
-  double now = now_ms();
-  if (evaluate_timer == -1){
-    evaluate_timer = now;
-  }
-  auto lane_info = best_lane();
-  if (evaluate_timer + EVALUATION_TIME < now ){ //Aggregate
-    for(auto lane: lane_info){
-      evaluations[lane[0]][1] += lane[1];
-    }
-  }else{ // Execute
-    double min_cost = MAXFLOAT;
-    int lane = -1;
-    for(auto info: lane_info){
-      
+  DoubleV costs = {0,0,0};
+  cout<<"Evaluations queue size:\t";
+  for(auto &ev:evaluations){
+    auto lane = ev.first;
+    auto lane_info_list = &ev.second;
+    cout<<lane_info_list->size()<<"\t";
+    for (auto lane_info=lane_info_list->begin(); lane_info!=lane_info_list->end(); ){
+      if ( lane_info->timestamp + EVALUATION_TIME >= now ){
+        costs[lane] += lane_info->cost;
+        lane_info++;
+      }else{
+        lane_info_list->erase(lane_info);
+      }
     }
   }
-  
-  
-  
-  
-}
-
-DoubleV2 BehaviourPlanner::get_trajectory(DoubleV2 previous_path){
-  auto next_states = possible_states();
-  
-  DoubleV costs = {};
-  DoubleV2 final_trajectory;
-  DoubleV3 trajectories = {};
-  
-  
-  
-  for(auto state: next_states ){
-    if (state == "KL"){
-      auto t = trajectory_for_state(state);
-      trajectories.push_back(t);
-      costs.push_back(0);
-    }
-  }
+  cout<<endl;
+  cout<<"\n--------------------------\n";
   
   double min_cost = MAXFLOAT;
-  double best_traj = -1;
-  for(int i = 0 ; i<trajectories.size(); i++){
+  int lane_idx = -1;
+  for(int i =0; i < costs.size(); i++ ){
     if (costs[i]<min_cost){
-      best_traj = i;
+      min_cost = costs[i];
+      lane_idx = i;
     }
   }
   
-  auto xy_trajectory = world->getXYTrajectory(trajectories[best_traj]);
-  return xy_trajectory;
+  
+  return latest_lane_info[lane_idx];
 }
 
-vector<vector<double>> BehaviourPlanner::trajectory_for_state(string state){
-  vector<vector<double>> trajectory;
-  if (state == "KL"){
-    auto filtered = world->filter_predictions(true, car->s, world->laneFromCoords(car->d), world->vehicles);
-    auto closest = world->get_closest(car->s, filtered);
-    
-    double max_vs = target_speed; //v_info[2];
-    double s = closest.s - buffer_distance;
-    double d = world->coordsFromLane(world->laneFromCoords(car->d));
-    
-    //trajectory = t.generate_trajectory_cs(s, d, max_vs, max_acc); //TODO: fix acce
-  }
-  
-  return trajectory;
-}
-
-vector<string> BehaviourPlanner::possible_states(){
-  int lane = this->world->laneFromCoords(car->d);
-  
-  if (car->state == "KL"){
-    vector<string> states = {"KL"};
-    if ( lane > 0 ){ states.push_back("PL"); }
-    if ( lane < this->world->lane_cnt-1 ){ states.push_back("PR"); }
-    return states;
-  }
-  
-  if (car->state == "PL"){
-    return {"KL","PL","L"};
-  }
-  
-  if (car->state == "PR"){
-    return {"KL","PR","R"};
-  }
-  
-  if (car->state == "L"){
-    return {"KL","L"};
-  }
-  
-  if (car->state == "R"){
-    return {"KL","R"};
-  }
-  
-  return {"KL"};
-}

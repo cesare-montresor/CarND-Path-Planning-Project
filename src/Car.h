@@ -17,11 +17,13 @@
 #include <stdio.h>
 #include "tools.h"
 
+class World;
 
 using namespace std;
 
 class Car{
 public:
+  World *world;
   string state = "KL";
   const double MAX_SPEED = mph2ms(50);
   const double MAX_ACC = 10;
@@ -41,11 +43,12 @@ public:
   double acc_s;
   double acc_d;
   
+  int lane;
+  
   Car();
   virtual ~Car(){};
   
   void update(double x,double y,double s,double d,double yaw,double speed);
-  void adjust_speed(double speed=-1);
 };
 
 

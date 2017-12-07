@@ -20,26 +20,43 @@
 #include "Car.h"
 #include <map>
 #include "tools.h"
-#include "Trajectory.h"
 
 using namespace std;
+
+
+struct LaneInfo{
+  int lane;
+  float cost;
+  float lane_speed;
+  float free_space;
+  double timestamp;
+};
+
+typedef vector<LaneInfo> LaneInfoV;
+typedef map<int, LaneInfoV> LaneEvaluations;
 
 class BehaviourPlanner{
   
 public:
-  const double EVALUATION_TIME = 1;
+  const double CHANGE_LANE_DISTANCE = 50;
+  const double SAFE_GAP_BEFORE = 10;
+  const double SAFE_GAP_AFTER = 20;
+  
+  const double EVALUATION_TIME = 2;
   const double COOLDOWN_TIME = 3;
   
   const double COST_COUNT = 10;
-  const double COST_DISTANCE = 50;
-  const double COST_SHIFT = 20;
+  const double COST_DISTANCE = 100;
+  const double COST_SHIFT = 10;
   const double COST_SPEED = 30;
   const double COST_SPEED_MAX = 20;
   
-  map<int, DoubleV> evaluations = {};
+  LaneEvaluations evaluations = {};
   
   double evaluate_timer = -1;
   double cooldown_timer = -1;
+  
+  int target_lane = -1;
   
   
   int horizon = 10;
@@ -51,16 +68,17 @@ public:
   
   World *world;
   Car *car;
-  Trajectory t;
-  
   
   BehaviourPlanner(World &w, Car &c);
   vector<string> possible_states();
   virtual ~BehaviourPlanner(){};
-  DoubleV2 best_lane();
-  DoubleV2 get_trajectory(DoubleV2 previous_path);
-  DoubleV2 trajectory_for_state(string state);
-  DoubleV2 BehaviourPlanner::evaluate_manuver();
+  bool can_move_to_lane(int lane);
+  bool can_move_right();
+  bool can_move_left();
+  bool should_change_lane();
+  void decide();
+  LaneInfo best_lane();
+  int evaluate_manuver();
   
   
 };

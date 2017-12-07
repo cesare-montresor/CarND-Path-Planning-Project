@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		AC897BBFB33B4B17984C60B2 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9EFBDAEDC12D40608BA9DAB5 /* main.cpp */; };
-		D32383101FA4BC9E0028AB31 /* Trajectory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D323830E1FA4BC9E0028AB31 /* Trajectory.cpp */; };
 		D3BF42CB1FA1D1700010C6CB /* tools.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D3BF42C91FA1D1700010C6CB /* tools.cpp */; };
 		D3D3BF621F9DE8AF00F7EF0D /* Car.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D3D3BF601F9DE8AF00F7EF0D /* Car.cpp */; };
 		D3D3BF681F9E334400F7EF0D /* BehaviourPlanner.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D3D3BF671F9E334400F7EF0D /* BehaviourPlanner.cpp */; };
@@ -18,8 +17,6 @@
 /* Begin PBXFileReference section */
 		9EFBDAEDC12D40608BA9DAB5 /* main.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = main.cpp; path = src/main.cpp; sourceTree = SOURCE_ROOT; };
 		C2DB7F1A98A04B089495B41D /* path_planning */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; path = path_planning; sourceTree = BUILT_PRODUCTS_DIR; };
-		D323830E1FA4BC9E0028AB31 /* Trajectory.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Trajectory.cpp; path = src/Trajectory.cpp; sourceTree = "<group>"; };
-		D323830F1FA4BC9E0028AB31 /* Trajectory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Trajectory.h; path = src/Trajectory.h; sourceTree = "<group>"; };
 		D37D7DBA1FA3801D007B1389 /* spline.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = spline.h; path = src/spline.h; sourceTree = "<group>"; };
 		D3BF42C91FA1D1700010C6CB /* tools.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = tools.cpp; path = src/tools.cpp; sourceTree = "<group>"; };
 		D3BF42CA1FA1D1700010C6CB /* tools.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = tools.h; path = src/tools.h; sourceTree = "<group>"; };
@@ -48,8 +45,6 @@
 				9EFBDAEDC12D40608BA9DAB5 /* main.cpp */,
 				D3D3BF661F9E334400F7EF0D /* BehaviourPlanner.h */,
 				D3D3BF671F9E334400F7EF0D /* BehaviourPlanner.cpp */,
-				D323830F1FA4BC9E0028AB31 /* Trajectory.h */,
-				D323830E1FA4BC9E0028AB31 /* Trajectory.cpp */,
 				D3D3BF611F9DE8AF00F7EF0D /* Car.h */,
 				D3D3BF601F9DE8AF00F7EF0D /* Car.cpp */,
 				D3DD58A31F9DD0CF0082106F /* World.h */,
@@ -125,7 +120,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D32383101FA4BC9E0028AB31 /* Trajectory.cpp in Sources */,
 				D3D3BF621F9DE8AF00F7EF0D /* Car.cpp in Sources */,
 				D3DD58A41F9DD0CF0082106F /* World.cpp in Sources */,
 				D3D3BF681F9E334400F7EF0D /* BehaviourPlanner.cpp in Sources */,
